@@ -90,6 +90,16 @@
         }
       }
     });
+
+    $(document).on('click', 'nav > ul > li > a', function(){
+      if($('#header').hasClass('header-top')){
+        $('.nav-menu').hide();
+      } else {
+        $('.nav-menu').show();
+      }
+    });
+
+
   } else if ($(".mobile-nav, .mobile-nav-toggle").length) {
     $(".mobile-nav, .mobile-nav-toggle").hide();
   }
@@ -125,5 +135,12 @@
     loop: true,
     items: 1
   });
+
+ 
+  if($('#header').hasClass('header-top')){
+    $('.nav-menu').hide();
+  } else {
+    $('.nav-menu').show();
+  }
 
 })(jQuery);
