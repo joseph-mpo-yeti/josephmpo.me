@@ -7,6 +7,30 @@
 !(function($) {
   "use strict";
 
+  // ---- Theme Toggle ----
+  (function initThemeToggle() {
+    var html = document.documentElement;
+    var saved = localStorage.getItem('theme');
+    if (saved) {
+      html.setAttribute('data-theme', saved);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      html.setAttribute('data-theme', 'light');
+    }
+    // dark is the default (no attribute needed), but set explicitly for clarity
+    if (!html.getAttribute('data-theme')) {
+      html.setAttribute('data-theme', 'dark');
+    }
+
+    var btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.addEventListener('click', function() {
+        var current = html.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+      });
+    }
+  })();
   location.pathname.replace(/index.html/, "");
 
   // Nav Menu
@@ -93,9 +117,9 @@
 
     $(document).on('click', 'nav > ul > li > a', function(){
       if($('#header').hasClass('header-top')){
-        $('.nav-menu').hide();
-      } else {
         $('.nav-menu').show();
+      } else {
+        $('.nav-menu').hide();
       }
     });
 
@@ -141,6 +165,63 @@
     $('.nav-menu').hide();
   } else {
     $('.nav-menu').show();
+  }
+
+  // CTA button click handler
+  $(document).on('click', '.cta-btn', function(e) {
+    e.preventDefault();
+    var hash = this.getAttribute('href');
+    var target = $(hash);
+    if (target.length) {
+      if (!$('#header').hasClass('header-top')) {
+        $('#header').addClass('header-top');
+        setTimeout(function() {
+          $("section").removeClass('section-show');
+          $(hash).addClass('section-show');
+          $('.nav-menu').show();
+        }, 350);
+      } else {
+        $("section").removeClass('section-show');
+        $(hash).addClass('section-show');
+        $('.nav-menu').show();
+      }
+    }
+  });
+
+  // Intersection Observer for portfolio card fade-in animations
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry, index) {
+        if (entry.isIntersecting) {
+          // Add staggered delay
+          var delay = Array.prototype.indexOf.call(
+            entry.target.parentElement.children, 
+            entry.target
+          ) * 100;
+          setTimeout(function() {
+            entry.target.classList.add('visible');
+          }, delay);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    // Observe portfolio items when sections become visible
+    var portfolioObserver = new MutationObserver(function() {
+      document.querySelectorAll('.portfolio-item').forEach(function(item) {
+        if (!item.classList.contains('fade-in')) {
+          item.classList.add('fade-in');
+          observer.observe(item);
+        }
+      });
+    });
+
+    portfolioObserver.observe(document.body, { 
+      childList: true, 
+      subtree: true, 
+      attributes: true, 
+      attributeFilter: ['class'] 
+    });
   }
 
 })(jQuery);
