@@ -5,6 +5,38 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
+  <!-- Theme resolution, inline and first in the head so it runs before the
+       first paint. Deferring this to main.js at the end of the body meant the
+       page rendered in the default theme and then flipped, which is visible.
+       Keep this inline: an external file would be another round trip before
+       anything could be drawn. -->
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var theme;
+
+      // The visitor's own choice on this site wins.
+      try {
+        theme = localStorage.getItem('theme');
+      } catch (e) {
+        // Storage access throws under some privacy settings; fall through.
+      }
+
+      // Otherwise take the device preference, and dark if it has none.
+      if (theme !== 'light' && theme !== 'dark') {
+        theme = window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: light)').matches
+            ? 'light'
+            : 'dark';
+      }
+
+      root.setAttribute('data-theme', theme);
+      // Tells the browser which canvas, scrollbars and form controls to use,
+      // so even the paint that happens before the stylesheet lands is right.
+      root.style.colorScheme = theme;
+    })();
+  </script>
+
   <title>Joseph Mpo Yeti — Fullstack Web Developer</title>
   <meta content="Portfolio of Joseph Mpo Yeti, a fullstack web developer specializing in modern web applications, browser extensions, and mobile apps." name="description">
   <meta content="fullstack developer, web developer, portfolio, Joseph Mpo Yeti, browser extensions, React, JavaScript" name="keywords">
