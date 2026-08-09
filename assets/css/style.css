@@ -1517,14 +1517,17 @@ section .container {
 }
 
 /*--------------------------------------------------------------
-# Portfolio rail (desktop only)
+# Portfolio rail (wide landscape viewports only)
 --------------------------------------------------------------*/
-/* The group label is a rail concept; the grid below 992px is unchanged. */
+/* The group label is a rail concept; the grid elsewhere is unchanged. */
 .portfolio-group {
   display: none;
 }
 
-@media (min-width: 992px) {
+/* Landscape as well as wide: a one-at-a-time split slide needs horizontal
+   room, so a tall narrow window keeps the grid. The 992px floor stays too,
+   otherwise a phone held sideways would qualify. */
+@media (min-width: 992px) and (orientation: landscape) {
   /* The stage fills everything under the collapsed header. Scrolling is the
      transition: native scroll-snap gives trackpad and drag for free, and
      scrollTo() drives the arrows, dots and keyboard. */

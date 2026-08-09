@@ -281,7 +281,8 @@
       return;
     }
 
-    var desktop = window.matchMedia('(min-width: 992px)');
+    // Must stay in step with the rail's media query in style.css.
+    var desktop = window.matchMedia('(min-width: 992px) and (orientation: landscape)');
     var index = 0;
 
     var controls = document.createElement('div');
