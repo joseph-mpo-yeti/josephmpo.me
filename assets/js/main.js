@@ -136,9 +136,39 @@
  
   // Initiate venobox (lightbox feature used in portofilo)
   $(document).ready(function() {
+    // The demo clips are inline <video> items. They carry preload="none" and no
+    // autoplay attribute on purpose: autoplay would make every hidden source
+    // download on page load, which is exactly the cost this replaced. Start
+    // them once the lightbox has actually put one on screen.
+    function playLightboxVideo() {
+      var video = document.querySelector('.vbox-inline video');
+      if (!video) {
+        return;
+      }
+
+      // VenoBox centres the panel from the content height it measures at open
+      // time. A preload="none" video has no dimensions yet, so it measures an
+      // empty box and the panel lands too low. Its updateOL() re-runs on window
+      // resize, so nudge it once the real size is known.
+      video.addEventListener('loadedmetadata', function() {
+        $(window).trigger('resize');
+      }, { once: true });
+
+      video.muted = true;
+      var started = video.play();
+      if (started && started.catch) {
+        started.catch(function() {});
+      }
+    }
+
     $('.venobox').venobox({
       'share': false,
-      'spinner': 'cube-grid'
+      'spinner': 'cube-grid',
+      // VenoBox paints the content panel white via an inline style, which a
+      // stylesheet cannot override. Video needs no backdrop of its own.
+      'bgcolor': 'transparent',
+      'cb_post_open': playLightboxVideo,
+      'cb_after_nav': playLightboxVideo
     });
   });
 
@@ -201,12 +231,55 @@
       });
     });
 
-    portfolioObserver.observe(document.body, { 
-      childList: true, 
-      subtree: true, 
-      attributes: true, 
-      attributeFilter: ['class'] 
+    portfolioObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class']
     });
   }
+
+  // Grid preview videos hold their source in data-src: <video> has no
+  // loading="lazy", so without this every card below the fold would fetch a
+  // few hundred KB the visitor may never scroll to. The poster carries the
+  // card until the source is attached.
+  (function initLazyPreviewVideos() {
+    var videos = document.querySelectorAll('video.preview-video[data-src]');
+    if (!videos.length) {
+      return;
+    }
+
+    function load(video) {
+      if (!video.dataset.src) {
+        return;
+      }
+      video.src = video.dataset.src;
+      delete video.dataset.src;
+      var started = video.play();
+      // Autoplay can still be refused (data saver, reduced motion); the poster
+      // stays put and the controls-free card simply does not animate.
+      if (started && started.catch) {
+        started.catch(function() {});
+      }
+    }
+
+    if (!('IntersectionObserver' in window)) {
+      Array.prototype.forEach.call(videos, load);
+      return;
+    }
+
+    var videoObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          load(entry.target);
+          videoObserver.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '200px' });
+
+    Array.prototype.forEach.call(videos, function(video) {
+      videoObserver.observe(video);
+    });
+  })();
 
 })(jQuery);
