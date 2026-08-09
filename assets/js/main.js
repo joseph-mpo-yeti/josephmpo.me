@@ -8,26 +8,44 @@
   "use strict";
 
   // ---- Theme Toggle ----
+  // Which theme to show is decided by the inline script in the head, before
+  // the first paint. This only handles changing it afterwards.
   (function initThemeToggle() {
     var html = document.documentElement;
-    var saved = localStorage.getItem('theme');
-    if (saved) {
-      html.setAttribute('data-theme', saved);
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-      html.setAttribute('data-theme', 'light');
-    }
-    // dark is the default (no attribute needed), but set explicitly for clarity
-    if (!html.getAttribute('data-theme')) {
-      html.setAttribute('data-theme', 'dark');
+
+    function apply(theme) {
+      html.setAttribute('data-theme', theme);
+      html.style.colorScheme = theme;
     }
 
     var btn = document.getElementById('theme-toggle');
     if (btn) {
       btn.addEventListener('click', function() {
-        var current = html.getAttribute('data-theme');
-        var next = current === 'dark' ? 'light' : 'dark';
-        html.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next);
+        var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        apply(next);
+        try {
+          localStorage.setItem('theme', next);
+        } catch (e) {
+          // Storage is unavailable; the choice simply lasts for this visit.
+        }
+      });
+    }
+
+    // Follow the device while the visitor has expressed no preference of
+    // their own, so switching the OS to dark at sunset is reflected here
+    // without a reload. Once they use the toggle, their choice stands.
+    var scheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)');
+    if (scheme && scheme.addEventListener) {
+      scheme.addEventListener('change', function(e) {
+        var saved;
+        try {
+          saved = localStorage.getItem('theme');
+        } catch (err) {
+          saved = null;
+        }
+        if (saved !== 'light' && saved !== 'dark') {
+          apply(e.matches ? 'light' : 'dark');
+        }
       });
     }
   })();
