@@ -49,12 +49,14 @@ report() {
   printf '  %-52s %6s KB\n' "$1" "$(( $(stat -c %s "$1") / 1024 ))"
 }
 
-# --- Still grid previews -----------------------------------------------------
-# Two widths so srcset can serve 1x and 2x for the same ~370px slot.
+# --- Still previews ----------------------------------------------------------
+# Three widths. The mobile grid renders in a ~370px slot (400w at 1x, 800w at
+# 2x); the desktop rail shows one project at a time in a panel up to ~820px,
+# which needs 1600w to stay sharp on a retina display. srcset picks per device.
 thumb() {
   local src=$1 name
   name=$(basename "${src%.*}")
-  for w in 400 800; do
+  for w in 400 800 1600; do
     local out=$THUMBS/$name-$w.webp
     if needs_build "$src" "$out"; then
       magick "$src" -resize "${w}x" -quality 80 -define webp:method=6 "$out"

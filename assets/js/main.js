@@ -257,11 +257,287 @@
           videoObserver.unobserve(entry.target);
         }
       });
-    }, { rootMargin: '200px' });
+      // Horizontally the margin is a full viewport, so the neighbouring slide
+      // on the desktop rail is already loading by the time it is swiped to.
+      // 200px is plenty vertically, where the mobile grid scrolls.
+    }, { rootMargin: '200px 100%' });
 
     Array.prototype.forEach.call(videos, function(video) {
       videoObserver.observe(video);
     });
+  })();
+
+  // Horizontal project rail, desktop only.
+  //
+  // The rail itself is CSS: from 992px up the portfolio section becomes a
+  // scroll-snap container and display:contents flattens the group wrappers so
+  // all 23 cards sit on one line. That means trackpad and touch already work,
+  // and the markup below 992px is untouched. This adds the affordances CSS
+  // cannot: arrows, dots, a counter, keyboard, and pointer drag.
+  (function initProjectRail() {
+    var rail = document.getElementById('portfolio');
+    var items = rail ? rail.querySelectorAll('.portfolio-item') : [];
+    if (!rail || !items.length) {
+      return;
+    }
+
+    // Must stay in step with the rail's media query in style.css.
+    var desktop = window.matchMedia('(min-width: 992px) and (orientation: landscape)');
+    var index = 0;
+
+    var controls = document.createElement('div');
+    controls.className = 'rail-controls';
+    controls.innerHTML =
+      '<button type="button" class="rail-arrow rail-prev" aria-label="Previous project">' +
+        '<svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg></button>' +
+      '<button type="button" class="rail-arrow rail-next" aria-label="Next project">' +
+        '<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"></use></svg></button>' +
+      '<div class="rail-status"><div class="rail-dots"></div>' +
+        '<span class="rail-count" aria-live="polite"></span></div>';
+    document.body.appendChild(controls);
+
+    var prev = controls.querySelector('.rail-prev');
+    var next = controls.querySelector('.rail-next');
+    var dotWrap = controls.querySelector('.rail-dots');
+    var count = controls.querySelector('.rail-count');
+
+    var dots = Array.prototype.map.call(items, function(item, i) {
+      var dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'rail-dot';
+      var name = item.querySelector('h4');
+      dot.setAttribute('aria-label', name ? name.textContent : 'Project ' + (i + 1));
+      dot.addEventListener('click', function() {
+        goTo(i);
+      });
+      dotWrap.appendChild(dot);
+      return dot;
+    });
+
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var animation = null;
+    var safety = null;
+    var animating = false;
+
+    function jump(left) {
+      rail.scrollLeft = left;
+    }
+
+    function stopAnimation() {
+      if (animation !== null) {
+        window.cancelAnimationFrame(animation);
+        animation = null;
+      }
+      if (safety !== null) {
+        window.clearTimeout(safety);
+        safety = null;
+      }
+      animating = false;
+      rail.style.scrollSnapType = '';
+    }
+
+    // Hand-rolled rather than scrollTo({behavior:'smooth'}), which silently
+    // does nothing on a snap container in some engines. Snapping is suspended
+    // for the duration so it does not fight the animation frame by frame.
+    function glide(left) {
+      var from = rail.scrollLeft;
+      var distance = left - from;
+      if (!distance) {
+        return;
+      }
+      var start = null;
+      var duration = 420;
+
+      animating = true;
+      rail.style.scrollSnapType = 'none';
+
+      function frame(now) {
+        if (start === null) {
+          start = now;
+        }
+        var t = Math.min(1, (now - start) / duration);
+        var eased = 1 - Math.pow(1 - t, 3);
+        rail.scrollLeft = from + distance * eased;
+        if (t < 1) {
+          animation = window.requestAnimationFrame(frame);
+          return;
+        }
+        stopAnimation();
+      }
+
+      animation = window.requestAnimationFrame(frame);
+
+      // Animation frames stop in a hidden tab. Without this the rail would be
+      // stranded mid-move, showing a slide the counter disagrees with, so the
+      // destination is guaranteed whether or not the frames ever arrive.
+      safety = window.setTimeout(function() {
+        if (animating) {
+          stopAnimation();
+          jump(left);
+        }
+      }, duration + 150);
+    }
+
+    function goTo(i, instant) {
+      var target = Math.max(0, Math.min(items.length - 1, i));
+      // Animating across twenty screens is a long whip-pan that tells the
+      // visitor nothing, so only neighbouring moves glide.
+      var far = Math.abs(target - index) > 2;
+      var left = target * rail.clientWidth;
+
+      stopAnimation();
+      index = target;
+      if (instant || far || reduceMotion.matches) {
+        jump(left);
+      } else {
+        glide(left);
+      }
+      render();
+    }
+
+    function render() {
+      count.textContent = (index + 1) + ' / ' + items.length;
+      prev.disabled = index === 0;
+      next.disabled = index === items.length - 1;
+      dots.forEach(function(dot, i) {
+        dot.setAttribute('aria-current', i === index ? 'true' : 'false');
+      });
+    }
+
+    prev.addEventListener('click', function() { goTo(index - 1); });
+    next.addEventListener('click', function() { goTo(index + 1); });
+
+    // Scroll is the source of truth: trackpad, drag and scrollTo all land here.
+    var ticking = false;
+    rail.addEventListener('scroll', function() {
+      if (ticking) {
+        return;
+      }
+      ticking = true;
+      window.requestAnimationFrame(function() {
+        ticking = false;
+        // While gliding, goTo already knows where it is heading; reading the
+        // in-between position back would just flicker the counter.
+        if (animating || !rail.clientWidth) {
+          return;
+        }
+        var current = Math.round(rail.scrollLeft / rail.clientWidth);
+        if (current !== index) {
+          index = current;
+          render();
+        }
+      });
+    }, { passive: true });
+
+    document.addEventListener('keydown', function(e) {
+      if (!document.body.classList.contains('rail-active')) {
+        return;
+      }
+      // Leave the lightbox and any text entry alone.
+      if (document.querySelector('.vbox-overlay') ||
+          /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) ||
+          e.target.isContentEditable || e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+      var moves = { ArrowLeft: index - 1, ArrowRight: index + 1, Home: 0, End: items.length - 1 };
+      if (e.key in moves) {
+        e.preventDefault();
+        goTo(moves[e.key]);
+      }
+    });
+
+    // Pointer drag. Movement only counts as a drag past a threshold, so a
+    // click on a lightbox link still reads as a click.
+    var THRESHOLD = 6;
+    var dragging = false;
+    var startX = 0;
+    var startScroll = 0;
+    var pointerId = null;
+
+    rail.addEventListener('pointerdown', function(e) {
+      if (e.pointerType === 'touch' || e.button !== 0 || !desktop.matches) {
+        return;
+      }
+      pointerId = e.pointerId;
+      startX = e.clientX;
+      startScroll = rail.scrollLeft;
+      dragging = false;
+    });
+
+    rail.addEventListener('pointermove', function(e) {
+      if (e.pointerId !== pointerId) {
+        return;
+      }
+      var dx = e.clientX - startX;
+      if (!dragging && Math.abs(dx) < THRESHOLD) {
+        return;
+      }
+      if (!dragging) {
+        dragging = true;
+        document.body.classList.add('rail-dragging');
+        try {
+          rail.setPointerCapture(pointerId);
+        } catch (err) {
+          // Capture is a nicety for pointers that leave the element; losing it
+          // must not take the drag itself down with it.
+        }
+      }
+      rail.scrollLeft = startScroll - dx;
+    });
+
+    function endDrag(e) {
+      if (e.pointerId !== pointerId) {
+        return;
+      }
+      if (dragging) {
+        // Snap to whichever slide the release landed nearest.
+        document.body.classList.remove('rail-dragging');
+        goTo(Math.round(rail.scrollLeft / rail.clientWidth));
+      }
+      try {
+        if (rail.hasPointerCapture && rail.hasPointerCapture(pointerId)) {
+          rail.releasePointerCapture(pointerId);
+        }
+      } catch (err) {
+        // Already released.
+      }
+      pointerId = null;
+      dragging = false;
+    }
+
+    rail.addEventListener('pointerup', endDrag);
+    rail.addEventListener('pointercancel', endDrag);
+
+    // The controls belong to the rail, so they follow both the breakpoint and
+    // whether the portfolio section is the one on screen.
+    function sync() {
+      var active = desktop.matches && rail.classList.contains('section-show');
+      document.body.classList.toggle('rail-active', active);
+      if (active) {
+        render();
+      }
+    }
+
+    new MutationObserver(sync).observe(rail, { attributes: true, attributeFilter: ['class'] });
+    desktop.addEventListener('change', function() {
+      // Leaving the breakpoint returns the grid; reset so the rail reopens at
+      // the first project rather than a stale scroll offset.
+      rail.scrollLeft = 0;
+      index = 0;
+      sync();
+    });
+    window.addEventListener('resize', function() {
+      sync();
+      if (desktop.matches && document.body.classList.contains('rail-active')) {
+        rail.scrollLeft = index * rail.clientWidth;
+      }
+    });
+
+    // sync() reads the viewport, so run it again once layout has settled:
+    // evaluated too early it can decide the rail is inactive and, with no
+    // class change to observe afterwards, never reconsider.
+    window.addEventListener('load', sync);
+    sync();
   })();
 
 })(jQuery);

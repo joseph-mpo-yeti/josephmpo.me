@@ -1515,3 +1515,322 @@ section .container {
 .credits a:hover {
   color: var(--accent-secondary);
 }
+
+/*--------------------------------------------------------------
+# Portfolio rail (wide landscape viewports only)
+--------------------------------------------------------------*/
+/* The group label is a rail concept; the grid elsewhere is unchanged. */
+.portfolio-group {
+  display: none;
+}
+
+/* Landscape as well as wide: a one-at-a-time split slide needs horizontal
+   room, so a tall narrow window keeps the grid. The 992px floor stays too,
+   otherwise a phone held sideways would qualify. */
+@media (min-width: 992px) and (orientation: landscape) {
+  /* The stage fills everything under the collapsed header. Scrolling is the
+     transition: native scroll-snap gives trackpad and drag for free, and
+     scrollTo() drives the arrows, dots and keyboard. */
+  #portfolio.section-show {
+    top: 100px;
+    /* Every section is absolutely positioned, so body has no height of its
+       own and `bottom: 0` would collapse the stage. Height must be explicit. */
+    bottom: auto;
+    height: calc(100vh - 100px);
+    padding-bottom: 0;
+    display: flex;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    /* Deliberately not scroll-behavior: smooth. It makes programmatic scrolls
+       on this element a silent no-op in some engines, so the glide between
+       neighbouring slides is animated in JS instead. */
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  #portfolio.section-show::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* display:contents drops the group wrappers out of layout so all 23 cards
+     become siblings on one rail, leaving the markup itself untouched. */
+  #portfolio.section-show > .container,
+  #portfolio.section-show .row.portfolio-container {
+    display: contents;
+  }
+
+  #portfolio.section-show .section-title {
+    display: none;
+  }
+
+  /* One project per screen. */
+  #portfolio.section-show .portfolio-item {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 clamp(72px, 7vw, 150px) 90px;
+    display: flex;
+    align-items: center;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+
+  /* The scroll is the animation; the scroll-in fade would only fight it. */
+  #portfolio.section-show .portfolio-item.fade-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  #portfolio.section-show .portfolio-wrap {
+    display: flex;
+    align-items: center;
+    gap: clamp(28px, 3.5vw, 64px);
+    width: 100%;
+    /* Capped so an ultrawide display gets a composed slide rather than a
+       screenshot marooned beside a field of empty card. */
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: clamp(22px, 2.4vw, 40px);
+    background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+  }
+
+  /* No lift or scrim: the slide is the whole stage, and the details are
+     already on show rather than waiting behind a hover. */
+  #portfolio.section-show .portfolio-wrap:hover {
+    transform: none;
+    border-color: var(--border-subtle);
+    box-shadow: var(--shadow-card);
+  }
+
+  #portfolio.section-show .portfolio-wrap::before {
+    display: none;
+  }
+
+  /* Both sit at their own aspect ratio inside the caps rather than being
+     stretched. For the stills, width comes from the sizes attribute, which
+     names this panel, so srcset picks a candidate that matches it. */
+  #portfolio.section-show .portfolio-wrap > img {
+    flex: 0 0 auto;
+    width: auto;
+    height: auto;
+    max-width: min(58%, 820px);
+    max-height: calc(100vh - 290px);
+  }
+
+  /* The Android loops are 400px wide at source and cannot be regenerated —
+     their GIFs were dropped once converted — so they are shown at native size
+     rather than upscaled into softness. */
+  #portfolio.section-show .portfolio-wrap > .preview-video {
+    flex: 0 0 auto;
+    width: auto;
+    height: auto;
+    max-width: min(58%, 400px);
+    max-height: calc(100vh - 290px);
+  }
+
+  #portfolio.section-show .portfolio-info {
+    position: static;
+    opacity: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  #portfolio.section-show .portfolio-info::before,
+  #portfolio.section-show .portfolio-info::after {
+    display: none;
+  }
+
+  #portfolio.section-show .portfolio-group {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: lowercase;
+    color: var(--text-secondary);
+  }
+
+  #portfolio.section-show .portfolio-info h4 {
+    font-size: clamp(30px, 3.1vw, 46px);
+    line-height: 1.1;
+    margin: 0;
+    color: var(--text-heading);
+    font-family: var(--font-heading);
+  }
+
+  #portfolio.section-show .portfolio-info p {
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  #portfolio.section-show .portfolio-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+    text-align: left;
+  }
+
+  #portfolio.section-show .portfolio-links a {
+    width: 46px;
+    height: 46px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    color: var(--text-secondary);
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    border-radius: 50%;
+  }
+
+  #portfolio.section-show .portfolio-links a:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+}
+
+/*--------------------------------------------------------------
+# Rail controls
+--------------------------------------------------------------*/
+/* Fixed siblings of the section rather than children, so they stay put while
+   the rail scrolls underneath. Shown only while the rail is the active view. */
+.rail-controls {
+  display: none;
+}
+
+body.rail-active .rail-controls {
+  display: block;
+}
+
+.rail-arrow {
+  position: fixed;
+  top: calc(50% + 20px);
+  transform: translateY(-50%);
+  z-index: 40;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-heading);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.rail-arrow:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.rail-arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.rail-arrow .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.rail-prev { left: 18px; }
+.rail-next { right: 18px; }
+
+/* The glass surface all but vanishes on the light background, so the controls
+   get an opaque one there. */
+[data-theme="light"] .rail-arrow,
+[data-theme="light"] .rail-status {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .rail-dot {
+  background: #4a5568;
+}
+
+.rail-status {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 9px 18px;
+  border-radius: 30px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+}
+
+.rail-dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.rail-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  opacity: 0.4;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.rail-dot:hover {
+  opacity: 0.8;
+}
+
+.rail-dot[aria-current="true"] {
+  background: var(--accent);
+  opacity: 1;
+  width: 22px;
+  border-radius: 4px;
+}
+
+.rail-count {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Pointer drag: suppress the browser's own image/link dragging. */
+body.rail-dragging #portfolio.section-show {
+  cursor: grabbing;
+  scroll-behavior: auto;
+  scroll-snap-type: none;
+}
+
+body.rail-dragging #portfolio.section-show * {
+  pointer-events: none;
+}
