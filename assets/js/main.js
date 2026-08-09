@@ -75,17 +75,16 @@
     }
   });
 
-  // Activate/show sections on load with hash links
+  // Activate/show sections on load with hash links.
+  // The portfolio section is shown by default (see the markup), so only act on
+  // a hash that points at a different section.
   if (window.location.hash) {
     var initial_nav = window.location.hash;
-    if ($(initial_nav).length) {
-      $('#header').addClass('header-top');
+    if ($(initial_nav).is('section') && !$(initial_nav).hasClass('section-show')) {
       $('.nav-menu .active, .mobile-nav .active').removeClass('active');
       $('.nav-menu, .mobile-nav').find('a[href="' + initial_nav + '"]').parent('li').addClass('active');
-      setTimeout(function() {
-        $("section").removeClass('section-show');
-        $(initial_nav).addClass('section-show');
-      }, 350);
+      $("section").removeClass('section-show');
+      $(initial_nav).addClass('section-show');
     }
   }
 
@@ -114,15 +113,6 @@
         }
       }
     });
-
-    $(document).on('click', 'nav > ul > li > a', function(){
-      if($('#header').hasClass('header-top')){
-        $('.nav-menu').show();
-      } else {
-        $('.nav-menu').hide();
-      }
-    });
-
 
   } else if ($(".mobile-nav, .mobile-nav-toggle").length) {
     $(".mobile-nav, .mobile-nav-toggle").hide();
@@ -160,12 +150,6 @@
     items: 1
   });
 
- 
-  if($('#header').hasClass('header-top')){
-    $('.nav-menu').hide();
-  } else {
-    $('.nav-menu').show();
-  }
 
   // CTA button click handler
   $(document).on('click', '.cta-btn', function(e) {
@@ -193,11 +177,12 @@
     var observer = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry, index) {
         if (entry.isIntersecting) {
-          // Add staggered delay
-          var delay = Array.prototype.indexOf.call(
-            entry.target.parentElement.children, 
+          // Add staggered delay, capped so the first screenful fills in quickly
+          var position = Array.prototype.indexOf.call(
+            entry.target.parentElement.children,
             entry.target
-          ) * 100;
+          );
+          var delay = Math.min(position, 5) * 60;
           setTimeout(function() {
             entry.target.classList.add('visible');
           }, delay);

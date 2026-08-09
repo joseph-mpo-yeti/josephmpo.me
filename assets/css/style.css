@@ -632,6 +632,50 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* On small screens the mobile-nav toggle owns the top-right corner, so the
+   theme toggle sits beside it and the inline nav gives way to the drawer —
+   stacked side by side they overflowed the collapsed bar. */
+@media (max-width: 992px) {
+  #header.header-top .container {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+  }
+  #header.header-top .nav-menu {
+    display: none;
+  }
+  .theme-toggle {
+    width: 38px;
+    height: 38px;
+    top: 21px;
+    right: 60px;
+  }
+  .mobile-nav-toggle {
+    top: 28px;
+  }
+  .mobile-nav {
+    top: 90px;
+  }
+}
+
+@media (max-width: 768px) {
+  .theme-toggle {
+    top: 11px;
+  }
+  .mobile-nav-toggle {
+    top: 18px;
+  }
+  .mobile-nav {
+    top: 70px;
+  }
+}
+
+@media (max-width: 420px) {
+  #header.header-top h1 {
+    font-size: 22px;
+  }
+}
+
 /*--------------------------------------------------------------
 # Sections General
 --------------------------------------------------------------*/
