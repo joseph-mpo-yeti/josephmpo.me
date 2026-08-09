@@ -195,6 +195,25 @@ body::before {
   }
 }
 
+/*--------------------------------------------------------------
+# Icons
+--------------------------------------------------------------*/
+/* Sprite symbols only; never rendered directly. */
+.icon-sprite {
+  display: none;
+}
+
+/* Sized in em and painted with currentColor, so the existing font-size and
+   color rules that styled the old icon font keep working unchanged. */
+.icon {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+  display: inline-block;
+  vertical-align: -0.125em;
+  flex: none;
+}
+
 a {
   color: var(--accent);
 }
@@ -515,7 +534,7 @@ h1, h2, h3, h4, h5, h6 {
   text-align: right;
 }
 
-.mobile-nav-toggle i {
+.mobile-nav-toggle .icon {
   color: var(--text-heading);
 }
 
@@ -580,7 +599,7 @@ h1, h2, h3, h4, h5, h6 {
   visibility: visible;
 }
 
-.mobile-nav-active .mobile-nav-toggle i {
+.mobile-nav-active .mobile-nav-toggle .icon {
   color: var(--text-heading);
 }
 
@@ -1050,7 +1069,7 @@ section .container {
   transform: translateY(-2px);
 }
 
-.contact .icofont {
+.contact .info-box > .info-icon {
   position: absolute;
   top: 30px;
   left: 35px;

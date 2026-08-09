@@ -94,12 +94,17 @@
       class: 'mobile-nav d-lg-none'
     });
     $('body').append($mobile_nav);
-    $('body').prepend('<button type="button" class="mobile-nav-toggle d-lg-none"><i class="icofont-navigation-menu"></i></button>');
+    $('body').prepend('<button type="button" class="mobile-nav-toggle d-lg-none" aria-label="Toggle menu"><svg class="icon" aria-hidden="true"><use href="#i-menu"></use></svg></button>');
     $('body').append('<div class="mobile-nav-overly"></div>');
+
+    // Swaps the sprite reference rather than a font class.
+    function setToggleIcon(open) {
+      $('.mobile-nav-toggle use').attr('href', open ? '#i-close' : '#i-menu');
+    }
 
     $(document).on('click', '.mobile-nav-toggle', function(e) {
       $('body').toggleClass('mobile-nav-active');
-      $('.mobile-nav-toggle i').toggleClass('icofont-navigation-menu icofont-close');
+      setToggleIcon($('body').hasClass('mobile-nav-active'));
       $('.mobile-nav-overly').toggle();
     });
 
@@ -108,7 +113,7 @@
       if (!container.is(e.target) && container.has(e.target).length === 0) {
         if ($('body').hasClass('mobile-nav-active')) {
           $('body').removeClass('mobile-nav-active');
-          $('.mobile-nav-toggle i').toggleClass('icofont-navigation-menu icofont-close');
+          setToggleIcon(false);
           $('.mobile-nav-overly').fadeOut();
         }
       }
@@ -118,22 +123,6 @@
     $(".mobile-nav, .mobile-nav-toggle").hide();
   }
 
-  // jQuery counterUp
-  $('[data-toggle="counter-up"]').counterUp({
-    delay: 10,
-    time: 1000
-  });
-
-  // Skills section
-  $('.skills-content').waypoint(function() {
-    $('.progress .progress-bar').each(function() {
-      $(this).css("width", $(this).attr("aria-valuenow") + '%');
-    });
-  }, {
-    offset: '80%'
-  });
-
- 
   // Initiate venobox (lightbox feature used in portofilo)
   $(document).ready(function() {
     // The demo clips are inline <video> items. They carry preload="none" and no
@@ -172,13 +161,6 @@
     });
   });
 
-  // Portfolio details carousel
-  $(".portfolio-details-carousel").owlCarousel({
-    autoplay: true,
-    dots: true,
-    loop: true,
-    items: 1
-  });
 
 
   // CTA button click handler
