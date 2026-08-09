@@ -814,8 +814,50 @@ section .container {
   box-shadow: var(--shadow-glow), var(--shadow-card);
 }
 
-.portfolio .portfolio-wrap img {
+.portfolio .portfolio-wrap img,
+.portfolio .portfolio-wrap video {
   border-radius: var(--radius-md);
+}
+
+/* The Android demos are looping video rather than a still. They carry
+   width/height attributes so the card reserves the right box before the
+   poster paints. */
+.portfolio .portfolio-wrap .preview-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg-secondary);
+}
+
+/* Hidden source markup for the VenoBox inline video items. */
+.vb-sources {
+  display: none;
+}
+
+/* VenoBox sizes .vbox-inline as a fixed white scrolling panel, which suits
+   text, not video. Let the video set the box and keep it inside the viewport. */
+.vbox-inline {
+  display: inline-block;
+  width: auto;
+  height: auto;
+  max-width: 92vw;
+  max-height: 80vh;
+  padding: 0;
+  overflow: hidden;
+  line-height: 0;
+}
+
+/* The width/height attributes on each source give the box its aspect ratio
+   before the media loads, so VenoBox centres against the final size rather
+   than against a zero-height element. */
+.vbox-inline video {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 92vw;
+  max-height: 80vh;
+  border-radius: var(--radius-md);
+  background: #000;
 }
 
 .portfolio .portfolio-wrap::before {
